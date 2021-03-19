@@ -19,6 +19,8 @@ function checksExistsUserAccount(request, response, next) {
   }
 
   request.user = user;
+
+  return next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
@@ -35,28 +37,34 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  const { username } = request.headers
-  const { id } = request.params
+  const { username } = request.headers;
+  const { id } = request.params;
+  
+  // Buscar o usuário
+  const userExists = users.find(user => user.username === username);
 
-  const user = users.find(user => user.username === username);
+  // Validar primeiro se o usuário existe
+  if (!userExists) {
+    return response.status(404).json({ error: 'User not found' });
+  }
 
-  const todo = user.todos.find(todo => todo.id === id);
+  // Verificar se o id é valido
+  if (!validate(id)) {
+    return response.status(400).json({ error: 'Invalid id for todo' });
+  }
 
-  if( user && validate(user.id) && todo) {
-    request.user = user
-    request.todo = todo
+  // Buscar o todo com base no usuário 
+  const todoExists = userExists.todos.find(todo => todo.id === id);
 
-    return next()
+  // Validar se o todo existe
+  if (!todoExists) {
+    return response.status(404).json({ error: 'Todo not found' });
   }
-  if(!user) {
-    response.status(404)
-  }
-  if(!validate(user.id)) {
-    response.status(400)
-  }
-  if(!todo) {
-    response.status(400)
-  }
+
+  request.user = userExists;
+  request.todo = todoExists;
+
+  return next();
 }
 
 function findUserById(request, response, next) {
@@ -72,7 +80,7 @@ function findUserById(request, response, next) {
     response.status(404)
   }
 
-
+  return next()
 }
 
 app.post('/users', (request, response) => {
