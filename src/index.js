@@ -79,7 +79,7 @@ function findUserById(request, response, next) {
   else {
     response.status(404).json({error: 'User not found!'})
   }
-
+  
 }
 
 app.post('/users', (request, response) => {
